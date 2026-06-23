@@ -1,6 +1,6 @@
 # DefenderPi
 
-### AI-Powered Network Defense Platform on Raspberry Pi
+### AI Assisted Inline Network Defense System for Small and Edge Networks Using Raspberry Pi.docx
 
 DefenderPi is an edge-based cybersecurity platform that combines intrusion prevention, DNS security, behavioral analytics, threat intelligence, and automated response into a single Raspberry Pi deployment.
 

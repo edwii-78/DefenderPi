@@ -100,10 +100,10 @@ Internet
 ## Screenshots
 
 ### System Architecture
-/screenshots/architecture.png
+![Architecture](screenshots/architecture.png)
 
-### Security Dashboard
-<img width="1600" height="655" alt="image" src="https://github.com/user-attachments/assets/1b2ed675-fe26-41ec-a3a6-2ceae5893719" />
+## Security Dashboard
+![Dashboard](screenshots/dashboard.png)
 
 ### Threat Detection Analytics
 <img width="1600" height="655" alt="image" src="https://github.com/user-attachments/assets/9badd235-9f27-43ec-ab39-50efa7815785" />

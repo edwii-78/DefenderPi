@@ -106,14 +106,13 @@ Internet
 ![Dashboard](screenshots/dashboard.png)
 
 ### Threat Detection Analytics
-<img width="1600" height="655" alt="image" src="https://github.com/user-attachments/assets/9badd235-9f27-43ec-ab39-50efa7815785" />
+![Threat Detection](screenshots/threat-analytics.png)
 
 ## Active Defense & Automated Response
-<img width="1600" height="694" alt="image" src="https://github.com/user-attachments/assets/1c1797e2-b9d1-47f3-8dfc-be8933846036" />
-
+![Active Defens](screenshots/active-defense.png)
 
 ### Telegram Security Alerts
-<img width="3259" height="2545" alt="image" src="https://github.com/user-attachments/assets/2c71f603-a532-41e6-890c-2633299cfd99" />
+![Telegram Alert](screenshots/telegram-alerts.jpg)
 
 
 ---

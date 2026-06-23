@@ -1,0 +1,20 @@
+{
+  "log_scaled_features": [
+    "flows_per_sec",
+    "bytes_per_flow",
+    "bytes_per_sec"
+  ],
+  "rows_used": 4000,
+  "k": 4,
+  "pca_components": 6,
+  "distance_profile": {
+    "p90": 3.061930834004424,
+    "p95": 3.3359676417844306,
+    "p98": 3.9416090314795817,
+    "p99": 4.338991660535383,
+    "max": 6.767727675533989
+  },
+  "silhouette_score": 0.24689975851797202,
+  "db_index": 1.2491685395110081,
+  "notes": "pca-enabled + decorrelated + weighted + optimized clustering"
+}

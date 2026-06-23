@@ -1,0 +1,17 @@
+{
+  "features": [
+    "flows_count",
+    "bytes_total",
+    "unique_dst_ips",
+    "unique_dst_ports",
+    "flow_burst_ratio",
+    "flow_delta",
+    "dns_delta",
+    "dst_spread_ratio",
+    "port_spread_ratio",
+    "traffic_skew",
+    "dns_queries",
+    "dns_entropy_avg",
+    "dns_anomaly_ratio"
+  ]
+}

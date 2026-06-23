@@ -1,0 +1,13 @@
+{
+  "features": [
+    "flows_per_sec",
+    "bytes_per_flow",
+    "bytes_per_sec",
+    "traffic_balance",
+    "dst_ip_density",
+    "dst_port_density",
+    "tcp_ratio",
+    "udp_ratio",
+    "flow_stability"
+  ]
+}

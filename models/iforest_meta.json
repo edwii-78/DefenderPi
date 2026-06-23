@@ -1,0 +1,19 @@
+{
+  "log_scaled_features": [
+    "flows_count",
+    "unique_dst_ports",
+    "bytes_total",
+    "dns_queries"
+  ],
+  "contamination": 0.015,
+  "rows_used": 5471,
+  "score_profile": {
+    "min": -0.1344658653676022,
+    "p1": -0.023590459731556143,
+    "p2": 0.022433130155617105,
+    "p5": 0.08695324735528798,
+    "median": 0.20629763298527737,
+    "max": 0.2619395135921259
+  },
+  "notes": "balanced IF (rolling-normalized deltas + stable scaling)"
+}

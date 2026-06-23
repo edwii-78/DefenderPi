@@ -1,0 +1,566 @@
+# RECON / NMAP (FIXED)
+# =========================
+#Real SYN scan detector
+drop tcp $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP SYN SCAN DETECTED"; \
+flags:S; flow:to_server; \
+detection_filter:track by_src, count 30, seconds 3; \
+classtype:attempted-recon; sid:92; rev:1;)
+
+# Faster scan
+drop tcp $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP FAST SYN SCAN"; \
+flags:S; flow:to_server; \
+detection_filter:track by_src, count 60, seconds 2; \
+classtype:attempted-recon; sid:91; rev:1;)
+
+# 🔹 MICRO BURST (EXTREME BEHAVIOR ONLY)
+drop tcp $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP EXTREME MICRO BURST"; \
+flags:S; ack:0; flow:to_server; \
+detection_filter:track by_src, count 50, seconds 1; \
+classtype:attempted-recon; sid:9000000; rev:1;)
+
+# 🔹 FAST / AGGRESSIVE SYN (ONLY ALERT)
+drop tcp $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP POSSIBLE FAST SCAN"; \
+flags:S; ack:0; flow:stateless; \
+detection_filter:track by_src, count 40, seconds 3; \
+classtype:attempted-recon; sid:9000001; rev:2;)
+
+# 🔹 NORMAL SYN SCAN (ONLY ALERT)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP POSSIBLE SYN SCAN"; \
+flags:S; ack:0; flow:stateless; \
+detection_filter:track by_src, count 100, seconds 10; \
+classtype:attempted-recon; sid:9000002; rev:2;)
+
+# 🔹 SLOW SCAN (ONLY ALERT)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP POSSIBLE SLOW SCAN"; \
+flags:S; ack:0; flow:stateless; \
+detection_filter:track by_src, count 120, seconds 60; \
+classtype:attempted-recon; sid:9000003; rev:2;)
+
+# 🔹 TRUE STEALTH SCANS (SAFE TO DROP)
+drop tcp $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP NMAP NULL SCAN"; \
+flags:0; flow:stateless; \
+classtype:attempted-recon; sid:9000004; rev:2;)
+
+drop tcp $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP NMAP FIN SCAN"; \
+flags:F; flow:stateless; \
+classtype:attempted-recon; sid:9000005; rev:2;)
+
+drop tcp $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP NMAP XMAS SCAN"; \
+flags:FPU; flow:stateless; \
+classtype:attempted-recon; sid:9000006; rev:2;)
+
+# 🔹 ACK SCAN (ONLY ALERT — NOT SAFE TO DROP)
+alert tcp $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP POSSIBLE ACK SCAN"; \
+flags:A; ack:0; flow:stateless; \
+detection_filter:track by_src, count 25, seconds 10; \
+classtype:attempted-recon; sid:9000007; rev:2;)
+
+# 🔹 NMAP USER AGENT (HIGH CONFIDENCE)
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP NMAP USER AGENT"; \
+flow:to_server,established; \
+http.user_agent; content:"nmap"; nocase; fast_pattern; \
+classtype:attempted-recon; sid:9000008; rev:2;)
+
+# DOS & FLOOD
+drop tcp any any -> $HOME_NET any \
+(msg:"DP SYN FLOOD"; \
+flags:S; flow:stateless; \
+detection_filter:track by_src, count 100, seconds 1; \
+classtype:attempted-dos; \
+sid:1000010; rev:2;)
+
+drop icmp any any -> $HOME_NET any \
+(msg:"DP ICMP FLOOD"; \
+detection_filter:track by_src, count 100, seconds 3; \
+classtype:attempted-dos; \
+sid:1000011; rev:1;)
+
+# =========================
+# BRUTEFORCE (FIXED)
+# =========================
+
+# FTP pre-NAT detection (port 8021)
+drop tcp $EXTERNAL_NET any -> $HOME_NET 8021 \
+(msg:"DP FTP BRUTE PRE-NAT"; \
+flow:to_server,established; \
+detection_filter:track by_src, count 5, seconds 60; \
+classtype:attempted-admin; \
+sid:1501015; rev:2;)
+
+# FTP protocol brute detection (real detection)
+drop ftp $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP FTP BRUTEFORCE DETECT"; \
+flow:to_server,established; \
+content:"USER "; nocase; \
+detection_filter:track by_src, count 5, seconds 30; \
+classtype:attempted-admin; \
+sid:1501016; rev:3;)
+
+# HTTP GET brute force (Hydra support)
+alert http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP BRUTEFORCE GET LOGIN"; \
+flow:to_server,established; \
+http.method; content:"GET"; \
+http.uri; content:"/vulnerabilities/brute/"; fast_pattern; \
+pcre:"/(username=|password=)/i"; \
+detection_filter:track by_src, count 15, seconds 5; \
+classtype:attempted-admin; \
+sid:1501010; rev:2;)
+
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP BRUTEFORCE GET BLOCK"; \
+flow:to_server,established; \
+http.method; content:"GET"; \
+http.uri; content:"/vulnerabilities/brute/"; fast_pattern; \
+pcre:"/(username=|password=)/i"; \
+detection_filter:track by_src, count 20, seconds 5; \
+classtype:attempted-admin; \
+sid:1501011; rev:2;)
+
+# HTTP POST brute force
+alert http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP BRUTEFORCE LOGIN ATTEMPT"; \
+flow:to_server,established; \
+http.method; content:"POST"; \
+http.uri; content:"/vulnerabilities/brute/"; fast_pattern; \
+detection_filter:track by_src, count 15, seconds 5; \
+classtype:attempted-admin; \
+sid:1501001; rev:2;)
+
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP BRUTEFORCE BLOCK"; \
+flow:to_server,established; \
+http.method; content:"POST"; \
+http.uri; content:"/vulnerabilities/brute/"; fast_pattern; \
+detection_filter:track by_src, count 20, seconds 5; \
+classtype:attempted-admin; \
+sid:1501003; rev:2;)
+
+# Password spray
+alert http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP PASSWORD SPRAY DETECTED"; \
+flow:to_server,established; \
+http.method; content:"POST"; \
+http.uri; content:"/vulnerabilities/brute/"; \
+detection_filter:track by_src, count 30, seconds 10; \
+classtype:attempted-admin; \
+sid:1501002; rev:2;)
+
+# Login failure response
+alert http $HOME_NET any -> $EXTERNAL_NET any \
+(msg:"DP LOGIN FAILURE RESPONSE"; \
+flow:to_client,established; \
+http.response_body; content:"Username and/or password incorrect"; \
+detection_filter:track by_src, count 10, seconds 5; \
+sid:1501004; rev:3;)
+
+# SSH brute
+drop tcp any any -> $HOME_NET 22 \
+(msg:"DP SSH BRUTE"; \
+flow:to_server,established; \
+detection_filter:track by_src, count 10, seconds 60; \
+sid:1501005; rev:2;)
+
+# TELNET brute
+drop tcp any any -> $HOME_NET 23 \
+(msg:"DP TELNET BRUTE"; \
+flow:to_server,established; \
+detection_filter:track by_src, count 5, seconds 60; \
+sid:1501007; rev:3;)
+
+
+# EXPLOITS
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP LOG4J RCE"; flow:to_server,established; \
+http.uri; content:"${jndi:"; nocase; \
+sid:1000030; rev:1;)
+
+
+drop tcp any any -> $HOME_NET 21 \
+(msg:"DP VSFTPD BACKDOOR"; flow:to_server,established; \
+content:":)"; sid:1000032; rev:1;)
+
+drop tcp any any -> $HOME_NET 6667 \
+(msg:"DP UNREALIRCD BACKDOOR"; flow:to_server,established; \
+content:"AB|3B|"; sid:1000033; rev:1;)
+
+# WEBATTACKS
+# =========================
+# SQL INJECTION – CORE
+# =========================
+# UNION
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP SQLI UNION SELECT"; \
+flow:to_server,established; \
+content:"union"; nocase; fast_pattern; \
+pcre:"/union\s*(\/\*.*\*\/\s*)?select/i"; \
+classtype:web-application-attack; sid:2100001; rev:3;)
+
+# BOOLEAN
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP SQLI BOOLEAN"; \
+flow:to_server,established; \
+content:"="; http_uri; fast_pattern; \
+pcre:"/(or|and)\s+\d+\s*=\s*\d+/i"; \
+classtype:web-application-attack; sid:2100002; rev:3;)
+
+# TIME
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP SQLI TIME DELAY"; \
+flow:to_server,established; \
+content:"sleep"; nocase; http_uri; fast_pattern; \
+pcre:"/(sleep\s*\(|benchmark\s*\(|waitfor\s+delay)/i"; \
+classtype:web-application-attack; sid:2100003; rev:3;)
+
+# ERROR
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP SQLI ERROR BASED"; \
+flow:to_server,established; \
+pcre:"/(extractvalue|updatexml|floor\()/i"; \
+classtype:web-application-attack; sid:2100004; rev:1;)
+
+# AUTH BYPASS
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP SQLI AUTH BYPASS"; \
+flow:to_server,established; \
+pcre:"/('|%27)\s*or\s*(\d+|true)\s*=\s*(\d+|true)/i"; \
+classtype:web-application-attack; sid:2100005; rev:3;)
+
+# SQLMAP UA
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP SQLMAP TOOL"; \
+flow:to_server,established; \
+http.user_agent; content:"sqlmap"; nocase; fast_pattern; \
+classtype:web-application-attack; sid:2100010; rev:2;)
+
+# COMMENT
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP SQLI COMMENT"; \
+flow:to_server,established; \
+content:"--"; http_uri; fast_pattern; \
+pcre:"/--\s+[^\s]+/i"; \
+classtype:web-application-attack; sid:2100011; rev:3;)
+
+# SCHEMA ENUM
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP SQLI SCHEMA ENUM"; \
+flow:to_server,established; \
+content:"information_schema"; nocase; http_uri; fast_pattern; \
+classtype:web-application-attack; sid:2100012; rev:1;)
+
+# =========================
+# XSS – CORE (FINAL OPTIMIZED)
+# =========================
+# SCRIPT TAG (strong anchor)
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP XSS SCRIPT TAG"; \
+flow:to_server,established; \
+content:"script"; nocase; http_uri; fast_pattern; \
+pcre:"/(<|%3C)\s*script/i"; \
+classtype:web-application-attack; sid:1200001; rev:6;)
+
+# EVENT HANDLER (reduced noise)
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP XSS EVENT HANDLER"; \
+flow:to_server,established; \
+pcre:"/on(load|error|click|mouseover|focus|submit)=/i"; \
+classtype:web-application-attack; sid:1200002; rev:7;)
+
+# JAVASCRIPT PROTOCOL (keep)
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP XSS JS PROTOCOL"; \
+flow:to_server,established; \
+content:"javascript:"; nocase; fast_pattern; \
+classtype:web-application-attack; sid:1200003; rev:4;)
+
+# TAG INJECTION (bounded + anchored)
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP XSS TAG INJECTION"; \
+flow:to_server,established; \
+content:"img"; nocase; http_uri; fast_pattern; \
+pcre:"/(<|%3C)\s*(img|svg|iframe|object|embed)[^>]{0,80}(on\w+=)/i"; \
+classtype:web-application-attack; sid:1200004; rev:7;)
+
+# ENCODED PAYLOAD (tightened)
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP XSS ENCODED"; \
+flow:to_server,established; \
+content:"%3C"; http_uri; fast_pattern; \
+pcre:"/%3C[^>]{0,80}(script|img|svg)[^>]{0,80}%3E/i"; \
+classtype:web-application-attack; sid:1200005; rev:6;)
+
+# DIRECT SCRIPT EXECUTION (fast kill rule)
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP XSS DIRECT SCRIPT EXEC"; \
+flow:to_server,established; \
+content:"<script"; nocase; http_uri; fast_pattern; \
+classtype:web-application-attack; sid:1200006; rev:1;)
+
+# XSS FUZZING BEHAVIOR (SMART VERSION)
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP XSS FUZZING BEHAVIOR"; \
+flow:to_server,established; \
+content:"<"; http_uri; \
+detection_filter:track by_src, count 10, seconds 5; \
+classtype:attempted-recon; sid:1200100; rev:2;)
+
+# DIRECTORY TRAVERSAL (FINAL FIXED)
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP DIR TRAVERSAL"; \
+flow:to_server,established; \
+content:"%2e"; nocase; http_uri; fast_pattern; \
+pcre:"/(\.\.\/|%2e%2e%2f|%252e%252e%252f)/i"; \
+classtype:web-application-attack; sid:1000042; rev:4;)
+
+# LFI COMMON FILES (OPTIMIZED)
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP LFI COMMON FILES"; \
+flow:to_server,established; \
+content:"/proc/"; http_uri; fast_pattern; \
+pcre:"/(\/proc\/self\/environ|access\.log|error\.log)/i"; \
+classtype:web-application-attack; sid:1000044; rev:2;)
+
+# MALWARE
+drop tcp $HOME_NET any -> any 23 \
+(msg:"DP IOT BOTNET TELNET"; flow:to_server,established; \
+sid:1000050; rev:1;)
+
+drop tcp $HOME_NET any -> any 6667 \
+(msg:"DP IRC BOTNET"; flow:to_server,established; \
+sid:1000051; rev:1;)
+
+drop tcp any any -> $HOME_NET 4444 \
+(msg:"DP REVERSE SHELL"; flow:to_server,established; \
+sid:1000052; rev:2;)
+
+# DNS TUNNELING
+drop dns any any -> any any \
+(msg:"DP DNS TUNNELING"; \
+dns.query; \
+pcre:"/([A-Za-z0-9]{50,})/"; \
+detection_filter:track by_src, count 5, seconds 60; \
+sid:1000060; rev:2;)
+
+# LATERAL MOVEMENT
+drop tcp $HOME_NET any -> $HOME_NET 445 \
+(msg:"DP SMB LATERAL SCAN"; \
+detection_filter:track by_src, count 10, seconds 30; \
+sid:1000070; rev:1;)
+
+drop tcp any any -> $HOME_NET 3389 \
+(msg:"DP RDP BRUTE"; \
+detection_filter:track by_src, count 10, seconds 60; \
+sid:1000071; rev:1;)
+
+# 🔥 CRITICAL INTERNAL SCAN DETECTION
+drop tcp $HOME_NET any -> $HOME_NET any \
+(msg:"DP INTERNAL SCAN"; \
+flags:S; ack:0; flow:stateless; \
+detection_filter:track by_src, count 20, seconds 10; \
+sid:2000004; rev:1;)
+
+
+#SUSPICIOUS 
+alert http any any -> any any \
+(msg:"DP SUSPICIOUS UA"; \
+http.user_agent; content:"curl"; nocase; \
+sid:1000080; rev:1;)
+
+alert http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP ZMAP DETECTED"; \
+http.user_agent; content:"zgrab"; nocase; \
+sid:2000001; rev:1;)
+
+alert tcp any any -> $HOME_NET [135,139,445] \
+(msg:"DP DCERPC PROBE"; \
+flow:to_server,established; \
+sid:2000002; rev:1;)
+
+alert tcp any any -> $HOME_NET 3389 \
+(msg:"DP RDP NMAP"; \
+content:"mstshash=nmap"; \
+sid:2000003; rev:1;)
+
+#COMMAND INJECTION (RCE)
+#COMMAND INJECTION
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP CMD INJECTION FAST"; \
+flow:to_server,established; \
+content:"&&"; http_client_body; fast_pattern; \
+pcre:"/&&\s*(id|whoami|uname|cat|ls|pwd)/i"; \
+sid:1300001; rev:1;)
+
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP CMD INJECTION ENCODED"; \
+flow:to_server,established; \
+content:"%26%26"; http_client_body; fast_pattern; \
+pcre:"/%26%26\s*(id|whoami|uname|cat|ls|pwd)/i"; \
+sid:1300002; rev:1;)
+
+alert http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP CURL UA FAST"; \
+flow:to_server,established; \
+content:"curl/"; http_user_agent; fast_pattern; \
+sid:1700003; rev:12;)
+
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP CMD INJECTION NORMALIZED"; \
+flow:to_server,established; \
+content:"&&"; http_client_body; fast_pattern; \
+pcre:"/&&\s*(id|whoami|uname|cat|ls|pwd)/i"; \
+sid:1300010; rev:1;)
+
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP CMD INJECTION ENCODED"; \
+flow:to_server,established; \
+content:"%26%26"; http_client_body; fast_pattern; \
+pcre:"/%26%26(\s|%20)*(id|whoami|uname|cat|ls|pwd)/i"; \
+sid:1300011; rev:1;)
+
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP CMD INJECTION URI"; \
+flow:to_server,established; \
+content:"&&"; http_uri; fast_pattern; \
+pcre:"/&&\s*(id|whoami|uname|cat|ls|pwd)/i"; \
+sid:1300012; rev:1;)
+
+#FILE INCLUSION (LFI / RFI)
+# Traversal (reliable threshold)
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP LFI CRITICAL FILE ACCESS"; \
+flow:to_server,established; \
+content:"/etc/"; http_uri; fast_pattern; \
+pcre:"/\/etc\/(passwd|shadow|group|hosts)/i"; \
+classtype:web-application-attack; \
+sid:1400002; rev:4;)
+
+alert http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP LFI PATH TRAVERSAL"; \
+flow:to_server,established; \
+content:"../"; http_uri; fast_pattern; \
+pcre:"/(\.\.\/){3,}/"; \
+classtype:web-application-attack; \
+sid:1400001; rev:3;)
+
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP LFI ENCODED TRAVERSAL"; \
+flow:to_server,established; \
+content:"%2e%2e"; http_uri; fast_pattern; \
+pcre:"/(%2e%2e(%2f|%5c)){2,}/i"; \
+classtype:web-application-attack; \
+sid:1400003; rev:3;)
+
+# Remote file include (tightened)
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP RFI REMOTE FILE INCLUDE"; \
+flow:to_server,established; \
+pcre:"/(page|file|include|path)=\s*(http|https|ftp):\/\/[^ ]+/i"; \
+classtype:web-application-attack; \
+sid:1400005; rev:3;)
+
+#FILE UPLOAD → WEBSHELL
+# PHP upload (better detection)
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP WEBSHELL UPLOAD PHP"; \
+flow:to_server,established; \
+pcre:"/filename=.*\.(php|phtml|php5)/i"; \
+classtype:web-application-attack; \
+sid:1502001; rev:2;)
+
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP REVERSE SHELL FULL PATTERN"; \
+flow:to_server,established; \
+content:"/dev/tcp"; http_uri; nocase; \
+pcre:"/(bash|sh).*\/dev\/tcp/i"; \
+classtype:trojan-activity; \
+sid:1502002; rev:1;)
+
+#suspicious file types
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP SUSPICIOUS FILE UPLOAD TYPE"; \
+flow:to_server,established; \
+content:"filename="; nocase; http_client_body; \
+content:".php"; nocase; \
+detection_filter:track by_src, count 3, seconds 60; \
+classtype:web-application-activity; sid:1502003; rev:6;)
+
+#Upload + execution combo (real attack)
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP WEBSHELL UPLOAD + EXEC"; \
+flow:to_server,established; \
+pcre:"/filename=.*\.(php|phtml).*(cmd=|exec=)/i"; \
+classtype:web-application-attack; \
+sid:1502004; rev:2;)
+
+
+#WEBSHELL EXECUTION
+# Webshell commands
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP WEBSHELL CMD EXEC"; \
+flow:to_server,established; \
+content:"cmd="; http_uri; nocase; \
+pcre:"/cmd=.*(id|whoami|ls|cat)/i"; \
+classtype:web-application-attack; \
+sid:1500010; rev:5;)
+
+# Encoded webshell
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP WEBSHELL ENCODED EXEC"; \
+flow:to_server,established; \
+pcre:"/(cmd%3D|exec%3D)/i"; \
+classtype:web-application-attack; \
+sid:1500011; rev:1;)
+
+#REVERSE SHELL DETECTION
+# Bash reverse shell
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP REVERSE SHELL BASH"; \
+flow:to_server,established; \
+pcre:"/bash\s+-i.*\/dev\/tcp/i"; \
+classtype:trojan-activity; \
+sid:1600001; rev:1;)
+
+# Netcat reverse shell
+drop tcp any any -> $HOME_NET any \
+(msg:"DP REVERSE SHELL NETCAT"; \
+flow:to_server,established; \
+content:"nc -e"; nocase; \
+classtype:trojan-activity; \
+sid:1600002; rev:1;)
+
+# Generic reverse shell (critical gap fix)
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP REVERSE SHELL GENERIC"; \
+flow:to_server,established; \
+content:"/dev/tcp"; nocase; \
+classtype:trojan-activity; sid:1600004; rev:4;)
+
+# Reverse shell ports
+drop tcp any any -> $HOME_NET [4444,4445,5555] \
+(msg:"DP REVERSE SHELL PORT"; \
+flow:to_server,established; \
+detection_filter:track by_src, count 3, seconds 30; \
+classtype:trojan-activity; \
+sid:1600003; rev:2;)
+
+#RECON / ENUM (BEHAVIOR)
+# Directory fuzzing (IMPORTANT)
+drop http $EXTERNAL_NET any -> $HOME_NET any \
+(msg:"DP DIR ENUMERATION BEHAVIOR"; \
+flow:to_server,established; \
+http.method; content:"GET"; \
+http.uri; content:"/"; fast_pattern; \
+detection_filter:track by_src, count 50, seconds 5; \
+classtype:attempted-recon; \
+sid:1700100; rev:2;)

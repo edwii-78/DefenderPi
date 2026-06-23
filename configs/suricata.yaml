@@ -1,0 +1,292 @@
+%YAML 1.1
+---
+
+# Suricata configuration tuned for Raspberry Pi 4 (4GB) - DefenderPi (Optimized)
+
+vars:
+  address-groups:
+    HOME_NET: "[192.168.50.0/24]"
+    EXTERNAL_NET: "!$HOME_NET"
+    HTTP_SERVERS: "$HOME_NET"
+    SMTP_SERVERS: "$HOME_NET"
+    SQL_SERVERS: "$HOME_NET"
+    DNS_SERVERS: "$HOME_NET"
+    TELNET_SERVERS: "$HOME_NET"
+    AIM_SERVERS: "$EXTERNAL_NET"
+    DC_SERVERS: "$HOME_NET"
+    DNP3_SERVER: "$HOME_NET"
+    DNP3_CLIENT: "$HOME_NET"
+    MODBUS_CLIENT: "$HOME_NET"
+    MODBUS_SERVER: "$HOME_NET"
+    ENIP_CLIENT: "$HOME_NET"
+    ENIP_SERVER: "$HOME_NET"
+
+  port-groups:
+    HTTP_PORTS: "80"
+    SHELLCODE_PORTS: "!80"
+    ORACLE_PORTS: 1521
+    SSH_PORTS: 22
+    DNP3_PORTS: 20000
+    MODBUS_PORTS: 502
+    FILE_DATA_PORTS: "[$HTTP_PORTS,110,143]"
+    FTP_PORTS: 21
+    GENEVE_PORTS: 6081
+    VXLAN_PORTS: 4789
+    TEREDO_PORTS: 3544
+
+default-log-dir: /var/log/suricata/
+
+stats:
+  enabled: yes
+  interval: 8
+  outputs:
+    - file:
+        enabled: yes
+        filename: /var/log/suricata/stats.log
+        rotate-interval: hourly
+        rotate-count: 24
+
+outputs:
+  - fast:
+      enabled: no
+
+  - eve-log:
+      enabled: yes
+      filetype: regular
+      filename: /var/log/suricata/eve.json
+      rotate-interval: day
+      community-id: yes
+      community-id-seed: 0
+      xff:
+        enabled: no
+
+      types:
+        - alert:
+            enabled: yes
+            metadata: yes
+            payload: no
+            payload-printable: no
+            packet: no
+            http-body: no
+            http-body-printable: no
+            tagged-packets: no
+
+        - flow:
+            enabled: yes
+            start: true
+            end: true
+            metadata: no
+
+        - dns:
+            enabled: yes
+            query: yes
+            answer: yes
+
+        - stats:
+            totals: yes
+            threads: no
+            deltas: no
+
+  - http-log:
+      enabled: no
+
+  - tls-log:
+      enabled: no
+
+  - tls-store:
+      enabled: no
+
+  - pcap-log:
+      enabled: no
+
+  - alert-debug:
+      enabled: no
+
+  - syslog:
+      enabled: no
+
+file-store:
+  enabled: no
+
+tcp-data:
+  enabled: no
+
+http-body-data:
+  enabled: no
+
+logging:
+  default-log-level: notice
+  outputs:
+    - file:
+        enabled: yes
+        filename: suricata.log
+
+#af-packet:
+# - interface: wlan1
+#   defrag: yes
+#    use-mmap: yes
+#    tpacket-v3: yes
+#   ring-size: 2048
+#    block-size: 16384
+#    block-timeout-ms: 10
+#    buffer-size: 131072
+#    rx-threads: 2
+#    checksum-checks: no
+
+pcap-file:
+  checksum-checks: auto
+
+app-layer:
+  protocols:
+    ntp:
+      enabled: no
+
+    dns:
+      tcp:
+        enabled: yes
+        detection-ports: { dp: 53 }
+      udp:
+        enabled: yes
+        detection-ports: { dp: 53 }
+
+    dhcp:
+      enabled: yes
+
+    mqtt:
+      enabled: no
+
+    http:
+      enabled: yes
+      libhtp:
+        default-config:
+          personality: IDS
+          request-body-limit: 128kb
+          response-body-limit: 256kb
+          request-body-minimal-inspect-size: 0kb
+          request-body-inspect-window: 32kb
+          response-body-minimal-inspect-size: 8kb
+          response-body-inspect-window: 64kb
+          response-body-decompress-layer-limit: 2
+          http-body-inline: auto
+          swf-decompression:
+            enabled: no
+
+    tls:
+      enabled: yes
+      detection-ports: { dp: 443,8443 }
+
+    ssh:
+      enabled: detection-only
+
+    smb:
+      enabled: detection-only
+      detection-ports: { dp: 139,445 }
+
+    rdp: { enabled: no }
+    ftp: { enabled: yes }
+    smtp:
+      enabled: detection-only
+      raw-extraction: no
+      mime:
+        decode-mime: no
+        decode-base64: no
+        decode-quoted-printable: no
+        extract-urls: no
+        body-md5: no
+
+    imap: { enabled: no }
+    sip: { enabled: no }
+    rfb: { enabled: no }
+    krb5: { enabled: no }
+    snmp: { enabled: no }
+    ikev2: { enabled: no }
+    dcerpc: { enabled: no }
+    nfs: { enabled: no }
+    tftp: { enabled: no }
+    http2: { enabled: no }
+    modbus: { enabled: no }
+    dnp3: { enabled: no }
+    enip: { enabled: no }
+
+asn1-max-frames: 64
+
+flow:
+  memcap: 384mb
+  hash-size: 262144
+  prealloc: 50000
+  emergency-recovery: 20
+  max-frags: 8192
+
+flow-timeouts:
+  default:
+    new: 30
+    established: 300
+    closed: 0
+    bypassed: 100
+    emergency-new: 10
+    emergency-established: 100
+
+stream:
+  memcap: 192mb
+  checksum-validation: no
+  inline: yes
+  bypass: no
+  midstream: true
+  reassembly:
+    memcap: 256mb
+    depth: 1mb
+    toserver-chunk-size: 8192
+    toclient-chunk-size: 8192
+    randomize-chunk-size: yes
+
+host:
+  hash-size: 2048
+  prealloc: 500
+  memcap: 16mb
+
+defrag:
+  memcap: 24mb
+  hash-size: 32768
+  trackers: 32768
+  max-frags: 32768
+  prealloc: yes
+  timeout: 45
+
+detect:
+  profile: medium
+  sgh-mpm-context: full
+  inspection-recursion-limit: 7000
+
+  prefilter:
+    default: mpm
+    mpm-algo: auto
+
+threading:
+  set-cpu-affinity: yes
+  detect-thread-ratio: 2.0
+
+luajit:
+  states: 32
+
+profiling:
+  rules: { enabled: no }
+  keywords: { enabled: no }
+  packets: { enabled: no }
+
+nfq:
+  mode: accept
+  queue: 0
+  fail-open: no
+  max-pending-packets: 4096
+
+default-rule-path: /var/lib/defenderpi/rulesets
+rule-files:
+ - defenderpi-final.rules
+
+unix-command:
+  enabled: yes
+  filename: /run/suricata/suricata-command.socket
+  mode: 0660
+  user: suricata
+  group: suricata
+  unlink: yes

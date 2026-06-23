@@ -100,7 +100,7 @@ Internet
 ## Screenshots
 
 ### System Architecture
-<img width="1101" height="546" alt="image" src="https://github.com/user-attachments/assets/f39550c3-82e2-4888-86c6-c555bc08d715" />
+/screenshots/architecture.png
 
 ### Security Dashboard
 <img width="1600" height="655" alt="image" src="https://github.com/user-attachments/assets/1b2ed675-fe26-41ec-a3a6-2ceae5893719" />
